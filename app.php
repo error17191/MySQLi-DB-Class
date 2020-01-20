@@ -5,13 +5,17 @@ require_once 'vendor/autoload.php';
 use App\MySQLiDB;
 
 //$db = new MySQLiDB('localhost', 'root', '123456', 'travninja');
-new MySQLiDB([
+$db = new MySQLiDB([
     'host' => 'localhost',
     'username' => 'root',
     'password' => '123456',
-    'dbname' => 'travninja'
+    'dbname' => 'permissions'
 ]);
-print_r(MySQLiDB::getInstance()->getOne('users'));
+
+$db->insert('roles', [
+    'id' => 2,
+    'name' => 'Admin',
+]);
 //$mysqli = new mysqli('localhost', 'root', '123456', 'travninja');
 //$db = new MySQLiDB($mysqli);
 //$db = new MySQLiDB();

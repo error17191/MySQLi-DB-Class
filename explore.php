@@ -7,18 +7,19 @@ require_once 'vendor/autoload.php';
 
 //$db->getOne('users');
 
-new MysqliDb([
-    'host' => 'localhost',
-    'username' => 'root',
-    'password' => '123456',
-    'db' => 'travninja'
-]);
-
-new MysqliDb([
+$db = new MysqliDb([
     'host' => 'localhost',
     'username' => 'root',
     'password' => '123456',
     'db' => 'permissions'
 ]);
 
-print_r(MysqliDb::getInstance()->getOne('users'));
+
+$db->addConnection('xyz', [
+    'host' => 'localhost',
+    'username' => 'root',
+    'password' => '123456',
+    'db' => 'travninja'
+]);
+
+print_r($db->connection('xyz')->getOne('users'));

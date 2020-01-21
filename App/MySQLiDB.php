@@ -35,9 +35,6 @@ class MySQLiDB
 
     public function addConnection($name, $params)
     {
-        if ($name == 'default') {
-            return;
-        }
         $this->connections[$name] = new MySQLiDB($params);
     }
 

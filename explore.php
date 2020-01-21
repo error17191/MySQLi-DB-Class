@@ -22,4 +22,5 @@ $db->addConnection('xyz', [
     'db' => 'travninja'
 ]);
 
+
 print_r($db->connection('xyz')->getOne('users'));

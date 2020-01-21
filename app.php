@@ -13,7 +13,6 @@ $db = new MySQLiDB([
 ]);
 
 $db->insert('roles', [
-    'id' => 2,
     'name' => 'Admin',
 ]);
 //$mysqli = new mysqli('localhost', 'root', '123456', 'travninja');

@@ -17,10 +17,9 @@ class MySQLiDB
 
         if (is_array($host)) {
             $params = $host; // array assignment copy the elements
-            $host = isset($params['host']) ? $params['host'] : null;
-            $username = isset($params['username']) ? $params['username'] : null;
-            $password = isset($params['password']) ? $params['password'] : null;
-            $dbname = isset($params['dbname']) ? $params['dbname'] : null;
+            foreach ($params as $key => $value) {
+                $$key = $value;
+            }
         }
 
         $this->mysqli = new \mysqli($host, $username, $password, $dbname);
@@ -73,8 +72,6 @@ class MySQLiDB
         }
         $values = substr($values, 0, strlen($values) - 1);
         $sql .= $values . ')';
-        var_dump($this->mysqli->query($sql));
-        print_r($this->mysqli->error_list);
     }
 
 }

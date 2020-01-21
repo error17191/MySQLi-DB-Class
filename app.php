@@ -12,14 +12,8 @@ $db = new MySQLiDB([
     'dbname' => 'permissions'
 ]);
 
-$db->insertMulti('roles', [
-    [
-        'name' => 'Admin',
-    ],
-    [
-        'name' => 'Supervisor',
-    ],
-]);
+print_r($db->getOne('roles'));
+
 //$mysqli = new mysqli('localhost', 'root', '123456', 'travninja');
 //$db = new MySQLiDB($mysqli);
 //$db = new MySQLiDB();

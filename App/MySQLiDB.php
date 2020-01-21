@@ -45,24 +45,47 @@ class MySQLiDB
         }
     }
 
-    public function getOne($tableName)
+    public function get($tableName, $numRows = null, $columns = null)
     {
-        return $this->mysqli->query("SELECT * from `{$tableName}` limit 1")->fetch_assoc();
+        if (!$columns) {
+            $columnsSql = '*';
+        } else {
+            $columnsSql = implode(',', $columns);
+        }
+
+        return $this->mysqli->query("SELECT {$columnsSql} from {$tableName} LIMIT {$numRows}")->fetch_all();
+    }
+
+    public function getOne($tableName, $columns = null)
+    {
+        foreach ($this->get($tableName, 1, $columns) as $result) {
+            return $result;
+        }
     }
 
     public function insert($table, $data)
     {
-        $this->mysqli->query($this->buildInsertQuery($table, $data));
+        $this->mysqli->query($this->buildInsertQuery($table, $data, 'INSERT'));
     }
 
     public function insertMulti($table, $data)
     {
-        $this->mysqli->query($this->buildInsertQuery($table, $data, true));
+        $this->mysqli->query($this->buildInsertQuery($table, $data, 'INSERT', true));
     }
 
-    private function buildInsertQuery($table, $data, $multi = false)
+    public function replace($table, $data)
     {
-        $sql = "INSERT INTO `{$table}`(";
+        $this->mysqli->query($this->buildInsertQuery($table, $data, 'REPLACE'));
+    }
+
+    public function replaceMulti($table, $data)
+    {
+        $this->mysqli->query($this->buildInsertQuery($table, $data, 'REPLACE', true));
+    }
+
+    private function buildInsertQuery($table, $data, $action, $multi = false)
+    {
+        $sql = "{$action} INTO `{$table}`(";
         if (!$multi) {
             $sql .= implode(',', array_keys($data)) . ')';
         } else {

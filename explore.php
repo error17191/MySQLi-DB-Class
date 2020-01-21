@@ -14,13 +14,3 @@ $db = new MysqliDb([
     'db' => 'permissions'
 ]);
 
-
-$db->addConnection('xyz', [
-    'host' => 'localhost',
-    'username' => 'root',
-    'password' => '123456',
-    'db' => 'travninja'
-]);
-
-
-print_r($db->connection('xyz')->getOne('users'));

@@ -55,23 +55,45 @@ class MySQLiDB
 
     public function insert($table, $data)
     {
-        $sql = "INSERT INTO {$table} (";
-        $columns = '';
-        foreach ($data as $key => $value) {
-            $columns .= "{$key},";
+        $this->mysqli->query($this->buildInsertQuery($table, $data));
+    }
+
+    public function insertMulti($table, $data)
+    {
+        $this->mysqli->query($this->buildInsertQuery($table, $data, true));
+    }
+
+    private function buildInsertQuery($table, $data, $multi = false)
+    {
+        $sql = "INSERT INTO `{$table}`(";
+        if (!$multi) {
+            $sql .= implode(',', array_keys($data)) . ')';
+        } else {
+            $sql .= implode(',', array_keys($data[0])) . ')';
         }
-        $columns = substr($columns, 0, strlen($columns) - 1);
-        $sql .= $columns . ') ';
-        $values = 'VALUES(';
-        foreach ($data as $key => $value) {
-            if (is_string($value)) {
-                $values .= "'{$value}',";
-            } else {
-                $values .= "{$value},";
+        $sql .= $this->buildInsertValuesSQL($data, $multi);
+
+        return $sql;
+    }
+
+    private function buildInsertValuesSQL($data, $multi)
+    {
+        $sql = ' VALUES ';
+        if (!$multi) {
+            $data = [$data];
+        }
+        foreach ($data as $record) {
+            $sql .= '(';
+            foreach ($record as $value) {
+                if (is_string($value)) {
+                    $sql .= "'{$value}',";
+                } else {
+                    $sql .= "{$value},";
+                }
             }
+            $sql = substr($sql, 0, strlen($sql) - 1) . '),';
         }
-        $values = substr($values, 0, strlen($values) - 1);
-        $sql .= $values . ')';
+        return substr($sql, 0, strlen($sql) - 1);
     }
 
 }

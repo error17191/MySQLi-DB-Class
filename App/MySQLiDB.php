@@ -4,6 +4,8 @@ namespace App;
 
 class MySQLiDB
 {
+    public $count = 0;
+
     private $mysqli;
     private static $_instance;
     private $connections = [];
@@ -52,8 +54,13 @@ class MySQLiDB
         } else {
             $columnsSql = implode(',', $columns);
         }
-
-        return $this->mysqli->query("SELECT {$columnsSql} from {$tableName} LIMIT {$numRows}")->fetch_all();
+        $sql = "SELECT {$columnsSql} from {$tableName}";
+        if ($numRows) {
+            $sql .= " LIMIT {$numRows}";
+        }
+        $results = $this->mysqli->query($sql)->fetch_all();
+        $this->count = count($results);
+        return $results;
     }
 
     public function getOne($tableName, $columns = null)

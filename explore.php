@@ -14,3 +14,9 @@ $db = new MysqliDb([
     'db' => 'permissions'
 ]);
 
+$db->update('roles', [
+    'dummy' => $db->inc()
+]);
+
+echo $db->getLastQuery();
+

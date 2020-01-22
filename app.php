@@ -12,11 +12,4 @@ $db = new MySQLiDB([
     'dbname' => 'permissions'
 ]);
 
-$db->update('roles', [
-    'dummy' => $db->dec(150)
-]);
-//$mysqli = new mysqli('localhost', 'root', '123456', 'travninja');
-//$db = new MySQLiDB($mysqli);
-//$db = new MySQLiDB();
-
-//print_r($db->getOne('users'));
+print_r($db->where('id', 5, '>')->get('roles'));

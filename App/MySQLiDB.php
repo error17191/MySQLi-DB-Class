@@ -9,6 +9,7 @@ class MySQLiDB
     private $mysqli;
     private static $_instance;
     private $connections = [];
+    private $whereClause = '';
 
     public function __construct($host = null, $username = null, $password = null, $dbname = null, $port = null, $charset = 'utf8', $socket = null)
     {
@@ -35,7 +36,7 @@ class MySQLiDB
         return self::$_instance;
     }
 
-    public function addConnection($name, $params)
+    public function addConnection($name, array $params)
     {
         $this->connections[$name] = new MySQLiDB($params);
     }
@@ -47,14 +48,15 @@ class MySQLiDB
         }
     }
 
-    public function get($tableName, $numRows = null, $columns = null)
+    public function get($tableName, $numRows = null, $columns = '*')
     {
-        if (!$columns) {
-            $columnsSql = '*';
-        } else {
-            $columnsSql = implode(',', $columns);
+        if ($columns != '*') {
+            $columns = implode(',', $columns);
         }
-        $sql = "SELECT {$columnsSql} from {$tableName}";
+        $sql = "SELECT {$columns} from {$tableName}";
+        if ($this->whereClause) {
+            $sql .= " {$this->whereClause} ";
+        }
         if ($numRows) {
             $sql .= " LIMIT {$numRows}";
         }
@@ -63,37 +65,32 @@ class MySQLiDB
         return $results;
     }
 
-    public function getOne($tableName, $columns = null)
+    public function getOne($tableName, $columns = '*')
     {
         foreach ($this->get($tableName, 1, $columns) as $result) {
             return $result;
         }
     }
 
-    public function insert($table, $data)
+    public function insert($tableName, $insertData)
     {
-        $this->mysqli->query($this->buildInsertQuery($table, $data, 'INSERT'));
+        $this->mysqli->query($this->buildInsertQuery($tableName, $insertData, 'INSERT'));
     }
 
-    public function insertMulti($table, $data)
+    public function insertMulti($tableName, array $multiInsertData, array $dataKeys = null)
     {
-        $this->mysqli->query($this->buildInsertQuery($table, $data, 'INSERT', true));
+        $this->mysqli->query($this->buildInsertQuery($tableName, $multiInsertData, 'INSERT', true));
     }
 
-    public function replace($table, $data)
+    public function replace($tableName, $insertData)
     {
-        $this->mysqli->query($this->buildInsertQuery($table, $data, 'REPLACE'));
+        $this->mysqli->query($this->buildInsertQuery($tableName, $insertData, 'REPLACE'));
     }
 
-    public function replaceMulti($table, $data)
+    public function update($tableName, $tableData, $numRows = null)
     {
-        $this->mysqli->query($this->buildInsertQuery($table, $data, 'REPLACE', true));
-    }
-
-    public function update($table, $data, $numRows = null)
-    {
-        $sql = "UPDATE {$table} SET ";
-        foreach ($data as $key => $value) {
+        $sql = "UPDATE {$tableName} SET ";
+        foreach ($tableData as $key => $value) {
             if (is_string($value)) {
                 $sql .= "{$key} = '{$value}',";
             } else if (is_array($value) && isset($value['inc'])) {
@@ -108,12 +105,18 @@ class MySQLiDB
         $this->mysqli->query($sql);
     }
 
-    public function inc($num)
+    public function where($whereProp, $whereValue = 'DBNULL', $operator = '=', $cond = 'AND')
+    {
+        $this->whereClause = "WHERE `{$whereProp}` {$operator} " . (is_string($whereValue) ? "'{$whereValue}'" : "{$whereValue}");
+        return $this;
+    }
+
+    public function inc($num = 1)
     {
         return ['inc' => $num];
     }
 
-    public function dec($num)
+    public function dec($num = 1)
     {
         return ['dec' => $num];
     }

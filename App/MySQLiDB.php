@@ -60,7 +60,7 @@ class MySQLiDB
         if ($numRows) {
             $sql .= " LIMIT {$numRows}";
         }
-        $results = $this->mysqli->query($sql)->fetch_all();
+        $results = $this->fetch($sql);
         $this->count = count($results);
         return $results;
     }
@@ -132,6 +132,11 @@ class MySQLiDB
         $sql .= $this->buildInsertValuesSQL($data, $multi);
 
         return $sql;
+    }
+
+    private function fetch($sql)
+    {
+        return $this->mysqli->query($sql)->fetch_all(MYSQLI_ASSOC);
     }
 
     private function buildInsertValuesSQL($data, $multi)

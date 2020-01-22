@@ -90,6 +90,34 @@ class MySQLiDB
         $this->mysqli->query($this->buildInsertQuery($table, $data, 'REPLACE', true));
     }
 
+    public function update($table, $data, $numRows = null)
+    {
+        $sql = "UPDATE {$table} SET ";
+        foreach ($data as $key => $value) {
+            if (is_string($value)) {
+                $sql .= "{$key} = '{$value}',";
+            } else if (is_array($value) && isset($value['inc'])) {
+                $sql .= "{$key} = {$key} + {$value['inc']},";
+            } else if (is_array($value) && isset($value['dec'])) {
+                $sql .= "{$key} = {$key} - {$value['dec']},";
+            } else {
+                $sql .= "{$key} = {$value},";
+            }
+        }
+        $sql = substr($sql, 0, strlen($sql) - 1);
+        $this->mysqli->query($sql);
+    }
+
+    public function inc($num)
+    {
+        return ['inc' => $num];
+    }
+
+    public function dec($num)
+    {
+        return ['dec' => $num];
+    }
+
     private function buildInsertQuery($table, $data, $action, $multi = false)
     {
         $sql = "{$action} INTO `{$table}`(";

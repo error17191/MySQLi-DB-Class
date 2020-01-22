@@ -12,9 +12,9 @@ $db = new MySQLiDB([
     'dbname' => 'permissions'
 ]);
 
-print_r($db->getOne('roles'));
-var_dump($db->count);
-
+$db->update('roles', [
+    'dummy' => $db->dec(150)
+]);
 //$mysqli = new mysqli('localhost', 'root', '123456', 'travninja');
 //$db = new MySQLiDB($mysqli);
 //$db = new MySQLiDB();

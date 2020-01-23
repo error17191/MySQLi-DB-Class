@@ -172,7 +172,7 @@ class MySQLiDB
             $columns = $fields;
         }
         $sql = "SELECT {$columns} FROM {$table} LIMIT {$this->pageLimit} OFFSET {$offset}";
-        $results = $this->mysqli->query($sql)->fetch_all();
+        $results = $this->fetch($sql);
         $this->count = count($results);
         return $results;
     }

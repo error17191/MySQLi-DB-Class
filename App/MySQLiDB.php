@@ -135,7 +135,7 @@ class MySQLiDB
             return null;
         }
         if (count($results) == 1) {
-            $results[0][$column];
+            return $results[0][$column];
         }
         $values = [];
         foreach ($results as $result){

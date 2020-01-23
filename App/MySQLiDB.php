@@ -10,6 +10,7 @@ class MySQLiDB
     private static $_instance;
     private $connections = [];
     private $whereClause = '';
+    public $pageLimit = 2;
 
     public function __construct($host = null, $username = null, $password = null, $dbname = null, $port = null, $charset = 'utf8', $socket = null)
     {
@@ -180,6 +181,23 @@ class MySQLiDB
             $sql = substr($sql, 0, strlen($sql) - 1) . '),';
         }
         return substr($sql, 0, strlen($sql) - 1);
+    }
+
+    public function paginate($table,$page,$fields = null)
+    {
+        $offset = ($page -1) * $this->pageLimit;
+        $columns = '*';
+        if(!$fields){
+            $columns = '*';
+        }elseif (is_array($fields)){
+            $columns = implode(',',$fields);
+        }elseif (is_string($fields)){
+            $columns = $fields;
+        }
+        $sql = "SELECT {$columns} FROM {$table} LIMIT {$this->pageLimit} OFFSET {$offset}";
+        $results = $this->fetch($sql);
+        $this->count = count($results);
+        return $results;
     }
 
 }

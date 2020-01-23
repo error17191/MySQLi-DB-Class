@@ -121,6 +121,29 @@ class MySQLiDB
         return ['dec' => $num];
     }
 
+    public function has($tableName)
+    {
+        $sql = "SELECT count(*) from `{$tableName}`" . ($this->whereClause ? ' ' . $this->whereClause : '');
+        return $this->mysqli->query($sql)->fetch_assoc()['count(*)'] >= 1;
+    }
+
+    public function getValue($tableName, $column, $limit = 1)
+    {
+        $results = $this->get($tableName, $limit, [$column]);
+        if (count($results) == 0) {
+            return null;
+        }
+        if (count($results) == 1) {
+            $results[0][$column];
+        }
+        $values = [];
+        foreach ($results as $result){
+            $values[] = $result[$column];
+        }
+
+        return $values;
+    }
+
     private function buildInsertQuery($table, $data, $action, $multi = false)
     {
         $sql = "{$action} INTO `{$table}`(";

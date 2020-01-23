@@ -5,12 +5,13 @@ namespace App;
 class MySQLiDB
 {
     public $count = 0;
+    public $pageLimit = 2;
+    public static $prefix;
 
     private $mysqli;
     private static $_instance;
     private $connections = [];
     private $whereClause = '';
-    public $pageLimit = 2;
 
     public function __construct($host = null, $username = null, $password = null, $dbname = null, $port = null, $charset = 'utf8', $socket = null)
     {
@@ -30,6 +31,16 @@ class MySQLiDB
         self::$_instance = $this;
         $this->connections['default'] = $this;
 
+        if (isset($prefix)) {
+            $this->setPrefix($prefix);
+        }
+
+    }
+
+    public function setPrefix($prefix = '')
+    {
+        self::$prefix = $prefix;
+        return $this;
     }
 
     public static function getInstance()
@@ -54,7 +65,7 @@ class MySQLiDB
         if ($columns != '*') {
             $columns = implode(',', $columns);
         }
-        $sql = "SELECT {$columns} from {$tableName}";
+        $sql = "SELECT {$columns} from {$this->tableName($tableName)}";
         if ($this->whereClause) {
             $sql .= " {$this->whereClause} ";
         }
@@ -90,7 +101,7 @@ class MySQLiDB
 
     public function update($tableName, $tableData, $numRows = null)
     {
-        $sql = "UPDATE {$tableName} SET ";
+        $sql = "UPDATE {$this->tableName($tableName)} SET ";
         foreach ($tableData as $key => $value) {
             if (is_string($value)) {
                 $sql .= "{$key} = '{$value}',";
@@ -124,8 +135,25 @@ class MySQLiDB
 
     public function has($tableName)
     {
-        $sql = "SELECT count(*) from `{$tableName}`" . ($this->whereClause ? ' ' . $this->whereClause : '');
+        $sql = "SELECT count(*) from `{$this->tableName($tableName)}`" . ($this->whereClause ? ' ' . $this->whereClause : '');
         return $this->mysqli->query($sql)->fetch_assoc()['count(*)'] >= 1;
+    }
+
+    public function paginate($table, $page, $fields = null)
+    {
+        $offset = ($page - 1) * $this->pageLimit;
+        $columns = '*';
+        if (!$fields) {
+            $columns = '*';
+        } elseif (is_array($fields)) {
+            $columns = implode(',', $fields);
+        } elseif (is_string($fields)) {
+            $columns = $fields;
+        }
+        $sql = "SELECT {$columns} FROM {$this->tableName($table)} LIMIT {$this->pageLimit} OFFSET {$offset}";
+        $results = $this->fetch($sql);
+        $this->count = count($results);
+        return $results;
     }
 
     public function getValue($tableName, $column, $limit = 1)
@@ -138,7 +166,7 @@ class MySQLiDB
             return $results[0][$column];
         }
         $values = [];
-        foreach ($results as $result){
+        foreach ($results as $result) {
             $values[] = $result[$column];
         }
 
@@ -183,21 +211,8 @@ class MySQLiDB
         return substr($sql, 0, strlen($sql) - 1);
     }
 
-    public function paginate($table,$page,$fields = null)
+    private function tableName($tableName)
     {
-        $offset = ($page -1) * $this->pageLimit;
-        $columns = '*';
-        if(!$fields){
-            $columns = '*';
-        }elseif (is_array($fields)){
-            $columns = implode(',',$fields);
-        }elseif (is_string($fields)){
-            $columns = $fields;
-        }
-        $sql = "SELECT {$columns} FROM {$table} LIMIT {$this->pageLimit} OFFSET {$offset}";
-        $results = $this->fetch($sql);
-        $this->count = count($results);
-        return $results;
+        return self::$prefix . $tableName;
     }
-
 }

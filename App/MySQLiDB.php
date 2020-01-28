@@ -12,6 +12,9 @@ class MySQLiDB
     private static $_instance;
     private $connections = [];
     private $whereClause = '';
+    private $whereBindings;
+    private $limit;
+    private $queryBindings = [];
 
     public function __construct($host = null, $username = null, $password = null, $dbname = null, $port = null, $charset = 'utf8', $socket = null)
     {
@@ -65,14 +68,12 @@ class MySQLiDB
         if ($columns != '*') {
             $columns = implode(',', $columns);
         }
-        $sql = "SELECT {$columns} from {$this->tableName($tableName)}";
-        if ($this->whereClause) {
-            $sql .= " {$this->whereClause} ";
-        }
         if ($numRows) {
-            $sql .= " LIMIT {$numRows}";
+            $this->limit = $numRows;
+        } else {
+            $this->limit = null;
         }
-        $results = $this->fetch($sql);
+        $results = $this->fetch("SELECT {$columns} from {$this->tableName($tableName)}");
         $this->count = count($results);
         return $results;
     }
@@ -86,12 +87,12 @@ class MySQLiDB
 
     public function insert($tableName, $insertData)
     {
-        $this->mysqli->query($this->buildInsertQuery($tableName, $insertData, 'INSERT'));
+        $this->query($this->buildInsertQuery($tableName, $insertData, 'INSERT'));
     }
 
     public function insertMulti($tableName, array $multiInsertData, array $dataKeys = null)
     {
-        $this->mysqli->query($this->buildInsertQuery($tableName, $multiInsertData, 'INSERT', true));
+        $this->query($this->buildInsertQuery($tableName, $multiInsertData, 'INSERT', true));
     }
 
     public function replace($tableName, $insertData)
@@ -102,24 +103,29 @@ class MySQLiDB
     public function update($tableName, $tableData, $numRows = null)
     {
         $sql = "UPDATE {$this->tableName($tableName)} SET ";
+        $this->bindings = [];
+        $this->limit = $numRows ?: null;
         foreach ($tableData as $key => $value) {
-            if (is_string($value)) {
-                $sql .= "{$key} = '{$value}',";
-            } else if (is_array($value) && isset($value['inc'])) {
-                $sql .= "{$key} = {$key} + {$value['inc']},";
-            } else if (is_array($value) && isset($value['dec'])) {
-                $sql .= "{$key} = {$key} - {$value['dec']},";
-            } else {
-                $sql .= "{$key} = {$value},";
-            }
+            $sql .= "{$key} = ?,";
+            $this->bindings[] = $value;
+//            if (is_string($value)) {
+//                $sql .= "{$key} = '{$value}',";
+//            } else if (is_array($value) && isset($value['inc'])) {
+//                $sql .= "{$key} = {$key} + {$value['inc']},";
+//            } else if (is_array($value) && isset($value['dec'])) {
+//                $sql .= "{$key} = {$key} - {$value['dec']},";
+//            } else {
+//                $sql .= "{$key} = {$value},";
+//            }
         }
         $sql = substr($sql, 0, strlen($sql) - 1);
-        $this->mysqli->query($sql);
+        $this->query($sql);
     }
 
     public function where($whereProp, $whereValue = 'DBNULL', $operator = '=', $cond = 'AND')
     {
-        $this->whereClause = "WHERE `{$whereProp}` {$operator} " . (is_string($whereValue) ? "'{$whereValue}'" : "{$whereValue}");
+        $this->whereClause = "WHERE `{$whereProp}` {$operator} ?";
+        $this->whereBindings = [$whereProp => $whereValue];
         return $this;
     }
 
@@ -173,6 +179,34 @@ class MySQLiDB
         return $values;
     }
 
+    private function query($sql)
+    {
+        if ($this->whereClause) {
+            $sql .= " " . $this->whereClause;
+            $this->bindings = array_merge($this->bindings, $this->whereBindings);
+        }
+        if ($this->limit) {
+            $sql .= " LIMIT ?";
+            $this->bindings[] = $this->limit;
+        }
+        $stmt = $this->mysqli->prepare($sql);
+        $typesString = '';
+        foreach ($this->bindings as $binding) {
+            if (is_int($binding)) {
+                $typesString .= 'i';
+            } else if (is_double($binding)) {
+                $typesString .= 'd';
+            } else {
+                $typesString .= 's';
+            }
+        }
+        if (count($this->bindings) > 0) {
+            $stmt->bind_param($typesString, ...array_values($this->bindings));
+        }
+        $stmt->execute();
+        return $stmt->get_result();
+    }
+
     private function buildInsertQuery($table, $data, $action, $multi = false)
     {
         $sql = "{$action} INTO `{$table}`(";
@@ -188,7 +222,7 @@ class MySQLiDB
 
     private function fetch($sql)
     {
-        return $this->mysqli->query($sql)->fetch_all(MYSQLI_ASSOC);
+        return $this->query($sql)->fetch_all(MYSQLI_ASSOC);
     }
 
     private function buildInsertValuesSQL($data, $multi)
